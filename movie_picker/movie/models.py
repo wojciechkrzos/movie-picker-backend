@@ -3,12 +3,14 @@ from django.db import models
 from django.utils import timezone
 from authentication.models import User
 
+
 class TimestampedModel(models.Model):
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     modified_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
+
 
 class Film(TimestampedModel):
     title = models.CharField(max_length=255)
@@ -24,15 +26,18 @@ class Film(TimestampedModel):
     def __str__(self):
         return self.title
 
+
 class Actor(TimestampedModel):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     birthdate = models.DateField(null=True, blank=True)
 
+
 class Director(TimestampedModel):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     birthdate = models.DateField(null=True, blank=True)
+
 
 class Category(TimestampedModel):
     name = models.CharField(max_length=255)
@@ -40,17 +45,20 @@ class Category(TimestampedModel):
     class Meta:
         unique_together = ('id', 'name')
 
+
 class Tag(TimestampedModel):
     name = models.CharField(max_length=255)
 
     class Meta:
         unique_together = ('id', 'name')
 
+
 class StreamingService(TimestampedModel):
     name = models.CharField(max_length=255)
 
     class Meta:
         unique_together = ('id', 'name')
+
 
 class WatchedFilm(TimestampedModel):
     film = models.ForeignKey(Film, on_delete=models.CASCADE)
@@ -60,12 +68,14 @@ class WatchedFilm(TimestampedModel):
     class Meta:
         unique_together = ('film', 'user')
 
+
 class FilmTag(TimestampedModel):
     film = models.ForeignKey(Film, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('film', 'tag')
+
 
 class FilmStreamingService(TimestampedModel):
     film = models.ForeignKey(Film, on_delete=models.CASCADE)
@@ -74,6 +84,7 @@ class FilmStreamingService(TimestampedModel):
     class Meta:
         unique_together = ('film', 'streaming_service')
 
+
 class FilmCategory(TimestampedModel):
     film = models.ForeignKey(Film, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
@@ -81,12 +92,14 @@ class FilmCategory(TimestampedModel):
     class Meta:
         unique_together = ('film', 'category')
 
+
 class FilmDirector(TimestampedModel):
     film = models.ForeignKey(Film, on_delete=models.CASCADE)
     director = models.ForeignKey(Director, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('film', 'director')
+
 
 class FilmActor(TimestampedModel):
     film = models.ForeignKey(Film, on_delete=models.CASCADE)

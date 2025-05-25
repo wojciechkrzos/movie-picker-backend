@@ -2,12 +2,14 @@
 from django.db import models
 from django.utils import timezone
 
+
 class TimestampedModel(models.Model):
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     modified_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
+
 
 class User(TimestampedModel):
     username = models.CharField(max_length=255)
@@ -20,6 +22,7 @@ class User(TimestampedModel):
     def __str__(self):
         return self.username
 
+
 class UserStreamingService(TimestampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     streaming_service = models.ForeignKey('movie.StreamingService', on_delete=models.CASCADE)
@@ -27,9 +30,11 @@ class UserStreamingService(TimestampedModel):
     class Meta:
         unique_together = ('user', 'streaming_service')
 
+
 class Question(TimestampedModel):
     question = models.CharField(max_length=255)
     available_answers = models.JSONField()
+
 
 class Answer(TimestampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
