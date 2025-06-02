@@ -6,7 +6,7 @@ from django.db import transaction
 from dotenv import load_dotenv
 
 from movie.models import (
-    Film, Actor, Director, Category, Tag, StreamingService,
+    Film, Actor, Director, Category,
     FilmActor, FilmDirector, FilmCategory
 )
 
@@ -37,17 +37,19 @@ class Command(BaseCommand):
     def __init__(self):
         super().__init__()
         self.api_key = os.getenv('TMDB_API_KEY')
-        self.base_url = 'https://api.themoviedb.org/3' # i think that we should move this to env
-        self.image_base_url = 'https://image.tmdb.org/t/p/w500' # i think that we should move this to env
-        # for base_url and image_base_url, those aren't used anywhere else but moving them seems to be the correct choice
+        self.base_url = 'https://api.themoviedb.org/3'  # i think that we should move this to env
+        self.image_base_url = 'https://image.tmdb.org/t/p/w500'  # i think that we should move this to env
+        # for base_url and image_base_url,
+        # those aren't used anywhere else but
+        # moving them seems to be the correct choice
         # will wait for the review
-        
+
         if not self.api_key:
             raise ValueError("TMDB_API_KEY environment variable is required")
 
     def handle(self, *args, **options):
         pages = options['pages']
-        
+
         if options['popular']:
             self.stdout.write("Fetching popular movies...")
             self.fetch_movies('popular', pages)
@@ -67,21 +69,21 @@ class Command(BaseCommand):
         """Fetch movies from TMDb API"""
         for page in range(1, pages + 1):
             self.stdout.write(f"Fetching {category} movies - page {page}...")
-            
+
             url = f"{self.base_url}/movie/{category}"
             params = {
                 'api_key': self.api_key,
                 'page': page,
                 'language': 'en-US'
             }
-            
+
             try:
                 response = requests.get(url, params=params)
                 response.raise_for_status()
                 data = response.json()
-                
+
                 self.process_movies(data['results'])
-                
+
             except requests.RequestException as e:
                 self.stdout.write(
                     self.style.ERROR(f"Error fetching data: {e}")
@@ -118,7 +120,7 @@ class Command(BaseCommand):
         )
 
         self.add_movie_details(film, movie_data['id'])
-        
+
         if movie_data.get('genre_ids'):
             self.add_genres(film, movie_data['genre_ids'])
 
@@ -131,18 +133,18 @@ class Command(BaseCommand):
             'api_key': self.api_key,
             'append_to_response': 'credits'
         }
-        
+
         try:
             response = requests.get(url, params=params)
             response.raise_for_status()
             data = response.json()
-            
+
             if 'credits' in data and 'cast' in data['credits']:
                 self.add_cast(film, data['credits']['cast'][:10])  # limit is here
-            
+
             if 'credits' in data and 'crew' in data['credits']:
                 self.add_directors(film, data['credits']['crew'])
-                
+
         except requests.RequestException as e:
             self.stdout.write(
                 self.style.WARNING(f"Error fetching details for {film.title}: {e}")
@@ -153,35 +155,35 @@ class Command(BaseCommand):
         for actor_data in cast_data:
             if not actor_data.get('name'):
                 continue
-                
+
             name_parts = actor_data['name'].split(' ', 1)
             first_name = name_parts[0]
             last_name = name_parts[1] if len(name_parts) > 1 else ''
-            
+
             actor, created = Actor.objects.get_or_create(
                 first_name=first_name,
                 last_name=last_name
             )
-            
+
             FilmActor.objects.get_or_create(film=film, actor=actor)
 
     def add_directors(self, film, crew_data):
         """Add directors to the film"""
         directors = [person for person in crew_data if person.get('job') == 'Director']
-        
+
         for director_data in directors:
             if not director_data.get('name'):
                 continue
-                
+
             name_parts = director_data['name'].split(' ', 1)
             first_name = name_parts[0]
             last_name = name_parts[1] if len(name_parts) > 1 else ''
-            
+
             director, created = Director.objects.get_or_create(
                 first_name=first_name,
                 last_name=last_name
             )
-            
+
             FilmDirector.objects.get_or_create(film=film, director=director)
 
     def add_genres(self, film, genre_ids):
@@ -194,7 +196,7 @@ class Command(BaseCommand):
             9648: 'Mystery', 10749: 'Romance', 878: 'Science Fiction',
             10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western'
         }
-        
+
         for genre_id in genre_ids:
             if genre_id in genre_map:
                 category, created = Category.objects.get_or_create(

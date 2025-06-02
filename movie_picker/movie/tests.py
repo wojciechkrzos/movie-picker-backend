@@ -19,21 +19,21 @@ class MovieModelsTest(TestCase):
     def setUp(self):
         """Set up test data"""
         self.actor = Actor.objects.create(
-            first_name="Tom", 
+            first_name="Tom",
             last_name="Hanks",
             birthdate=date(1956, 7, 9)
         )
-        
+
         self.director = Director.objects.create(
             first_name="Steven",
             last_name="Spielberg",
             birthdate=date(1946, 12, 18)
         )
-        
+
         self.category = Category.objects.create(name="Drama")
         self.tag = Tag.objects.create(name="Oscar Winner")
         self.streaming_service = StreamingService.objects.create(name="Netflix")
-        
+
         self.film = Film.objects.create(
             title="Forrest Gump",
             release_date=date(1994, 7, 6),
@@ -62,24 +62,24 @@ class MovieModelsTest(TestCase):
     def test_film_actor_relationship(self):
         """Test many-to-many relationship between films and actors"""
         FilmActor.objects.create(film=self.film, actor=self.actor)
-        
+
         self.assertIn(self.actor, self.film.actors.all())
         self.assertEqual(self.film.actors.count(), 1)
-        
+
         with self.assertRaises(IntegrityError):
             FilmActor.objects.create(film=self.film, actor=self.actor)
 
     def test_film_director_relationship(self):
         """Test many-to-many relationship between films and directors"""
         FilmDirector.objects.create(film=self.film, director=self.director)
-        
+
         self.assertIn(self.director, self.film.directors.all())
         self.assertEqual(self.film.directors.count(), 1)
 
     def test_film_category_relationship(self):
         """Test many-to-many relationship between films and categories"""
         FilmCategory.objects.create(film=self.film, category=self.category)
-        
+
         self.assertIn(self.category, self.film.categories.all())
         self.assertEqual(self.film.categories.count(), 1)
 
@@ -97,7 +97,7 @@ class MovieSeedCommandTest(TestCase):
     @patch('movie.management.commands.db_seed.requests.get')
     def test_db_seed_command_with_mock_data(self, mock_get):
         """Test the db_seed command with mocked API responses"""
-        
+
         # TODO: Configure
         mock_movie_response = MagicMock()
         mock_movie_response.json.return_value = {
@@ -112,7 +112,7 @@ class MovieSeedCommandTest(TestCase):
             ]
         }
         mock_movie_response.raise_for_status.return_value = None
-        
+
         # TODO: configure
         mock_detail_response = MagicMock()
         mock_detail_response.json.return_value = {
@@ -127,7 +127,7 @@ class MovieSeedCommandTest(TestCase):
             }
         }
         mock_detail_response.raise_for_status.return_value = None
-        
+
         # TODO: configure
         def mock_requests_get(url, params=None):
             if 'movie/popular' in url:
@@ -135,15 +135,15 @@ class MovieSeedCommandTest(TestCase):
             elif 'movie/123' in url:
                 return mock_detail_response
             return mock_movie_response
-        
+
         mock_get.side_effect = mock_requests_get
-        
+
         try:
             with patch.dict('os.environ', {'TMDB_API_KEY': 'test_key'}):
                 call_command('db_seed', '--popular', '--pages', '1', verbosity=0)
         except Exception as e:
             self.fail(f"db_seed command raised an exception: {e}")
-        
+
         # check if data created
         self.assertTrue(Film.objects.filter(title='Test Movie').exists())
         self.assertTrue(Actor.objects.filter(first_name='Test').exists())
@@ -164,6 +164,7 @@ class MovieSeedCommandTest(TestCase):
             with self.assertRaises(ValueError):
                 call_command('db_seed', '--popular', '--pages', '1')
 
+
 class WatchedFilmTest(TestCase):
     """Test the WatchedFilm model"""
 
@@ -174,7 +175,7 @@ class WatchedFilmTest(TestCase):
             email="test@example.com",
             password="testpass123"
         )
-        
+
         self.film = Film.objects.create(
             title="Test Film",
             release_date=date(2023, 1, 1),
@@ -188,7 +189,7 @@ class WatchedFilmTest(TestCase):
             user=self.user,
             review=8
         )
-        
+
         self.assertEqual(watched.film, self.film)
         self.assertEqual(watched.user, self.user)
         self.assertEqual(watched.review, 8)
@@ -196,6 +197,6 @@ class WatchedFilmTest(TestCase):
     def test_watched_film_unique_constraint(self):
         """Test that a user can't watch the same film twice"""
         WatchedFilm.objects.create(film=self.film, user=self.user, review=8)
-        
+
         with self.assertRaises(IntegrityError):
             WatchedFilm.objects.create(film=self.film, user=self.user, review=9)
