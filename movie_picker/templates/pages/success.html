@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Google OAuth Success</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #28a745;
+            text-align: center;
+        }
+        .token-container {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .token-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .token-value {
+            word-break: break-all;
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 3px;
+            margin-top: 5px;
+        }
+        .api-test {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f4f8;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #api-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="success">🎉 Google OAuth Authentication Successful!</h1>
+    
+    <div id="tokens-display">
+        <!-- Tokens will be displayed here by JavaScript -->
+    </div>
+
+    <div class="api-test">
+        <h3>Test Protected API Endpoint</h3>
+        <p>Click the button below to test the protected API endpoint using your JWT token:</p>
+        <button onclick="testProtectedAPI()">Test Protected API</button>
+        <div id="api-result"></div>
+    </div>
+</div>
+
+<script>
+// Get the JWT tokens from URL parameters or local storage
+function displayTokens() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const access = urlParams.get('access') || localStorage.getItem('access_token');
+    const refresh = urlParams.get('refresh') || localStorage.getItem('refresh_token');
+    
+    if (access && refresh) {
+        localStorage.setItem('access_token', access);
+        localStorage.setItem('refresh_token', refresh);
+        
+        document.getElementById('tokens-display').innerHTML = `
+            <div class="token-container">
+                <div class="token-label">Access Token:</div>
+                <div class="token-value">${access}</div>
+            </div>
+            <div class="token-container">
+                <div class="token-label">Refresh Token:</div>
+                <div class="token-value">${refresh}</div>
+            </div>
+        `;
+    } else {
+        document.getElementById('tokens-display').innerHTML = `
+            <div style="color: #dc3545; text-align: center;">
+                <p>No tokens found. Please try logging in again.</p>
+            </div>
+        `;
+    }
+}
+
+// Test the protected API endpoint
+function testProtectedAPI() {
+    const access_token = localStorage.getItem('access_token');
+    
+    if (!access_token) {
+        document.getElementById('api-result').innerHTML = '<div style="color: #dc3545;">No access token found!</div>';
+        return;
+    }
+    
+    fetch('/api/v1/auth/test/', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('api-result').innerHTML = `
+            <div style="color: #28a745;">
+                <strong>API Test Successful!</strong><br>
+                Response: <pre>${JSON.stringify(data, null, 2)}</pre>
+            </div>
+        `;
+    })
+    .catch(error => {
+        document.getElementById('api-result').innerHTML = `
+            <div style="color: #dc3545;">
+                <strong>API Test Failed!</strong><br>
+                Error: ${error.message}
+            </div>
+        `;
+    });
+}
+
+// Display tokens when page loads
+displayTokens();
+</script>
+</body>
+</html>
