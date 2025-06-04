@@ -23,6 +23,8 @@ jobs:
         run: |
           pip install flake8
           flake8 movie_picker
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
       - name: Run migrations
         run: |
           python movie_picker/manage.py migrate
