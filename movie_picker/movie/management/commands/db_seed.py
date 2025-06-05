@@ -37,12 +37,8 @@ class Command(BaseCommand):
     def __init__(self):
         super().__init__()
         self.api_key = os.getenv('TMDB_API_KEY')
-        self.base_url = 'https://api.themoviedb.org/3'  # i think that we should move this to env
-        self.image_base_url = 'https://image.tmdb.org/t/p/w500'  # i think that we should move this to env
-        # for base_url and image_base_url,
-        # those aren't used anywhere else but
-        # moving them seems to be the correct choice
-        # will wait for the review
+        self.base_url = os.getenv('TMDB_BASE_URL', 'https://api.themoviedb.org/3')
+        self.image_base_url = os.getenv('TMDB_IMAGE_BASE_URL', 'https://image.tmdb.org/t/p/w500')
 
         if not self.api_key:
             raise ValueError("TMDB_API_KEY environment variable is required")
