@@ -36,12 +36,12 @@ class Command(BaseCommand):
 
     def __init__(self):
         super().__init__()
-        self.api_key = os.getenv('TMDB_API_KEY')
+        self.api_key = os.getenv('API_KEY_TMDB')
         self.base_url = os.getenv('TMDB_BASE_URL', 'https://api.themoviedb.org/3')
         self.image_base_url = os.getenv('TMDB_IMAGE_BASE_URL', 'https://image.tmdb.org/t/p/w500')
 
         if not self.api_key:
-            raise ValueError("TMDB_API_KEY environment variable is required")
+            raise ValueError("API_KEY_TMDB environment variable is required")
 
     def handle(self, *args, **options):
         pages = options['pages']
