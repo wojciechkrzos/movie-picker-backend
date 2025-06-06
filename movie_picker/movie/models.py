@@ -1,6 +1,7 @@
 # movie/models.py
 from django.db import models
 from django.utils import timezone
+from django.core.validators import MinValueValidator, MaxValueValidator
 from authentication.models import User
 
 
@@ -63,7 +64,12 @@ class StreamingService(TimestampedModel):
 class WatchedFilm(TimestampedModel):
     film = models.ForeignKey(Film, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    review = models.IntegerField(null=True, blank=True)
+    review = models.IntegerField(
+        null=True, 
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Rating from 1 to 5"
+    )
 
     class Meta:
         unique_together = ('film', 'user')

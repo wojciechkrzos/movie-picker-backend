@@ -141,6 +141,10 @@ class FilmDetailSerializer(serializers.ModelSerializer):
         return instance
 
 
+# Alias for consistency with the import in authentication views
+FilmSerializer = FilmDetailSerializer
+
+
 class WatchedFilmSerializer(serializers.ModelSerializer):
     film_title = serializers.CharField(source='film.title', read_only=True)
     user_username = serializers.CharField(source='user.username', read_only=True)

@@ -2,6 +2,7 @@ from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
 from django.conf import settings
+import os
 import requests
 from django.urls import reverse
 from rest_framework import status
@@ -11,6 +12,12 @@ from django.shortcuts import render
 from django.views import View
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.generics import RetrieveAPIView, ListAPIView
+from django.db import transaction
+from .models import User, Question, Answer
+from .serializers import UserProfileSerializer, QuizAnswersSerializer, QuestionSerializer
+from movie.models import Film
+from movie.serializers import FilmSerializer
 
 
 class GoogleLogin(SocialLoginView):
@@ -89,3 +96,65 @@ def protected_view(request):
         'user': request.user.email,
         'user_id': request.user.id
     }, status=status.HTTP_200_OK)
+
+
+class UserProfileView(RetrieveAPIView):
+    """
+    Return user info with preferences (streaming services, quiz answers)
+    """
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user
+
+
+class QuestionsListView(ListAPIView):
+    """
+    Get all available quiz questions
+    """
+    queryset = Question.objects.all()
+    serializer_class = QuestionSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class QuizAnswersView(APIView):
+    """
+    POST quiz answers and return recommended films with details
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = QuizAnswersSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        answers_data = serializer.validated_data['answers']
+        user = request.user
+        
+        # Save quiz answers
+        with transaction.atomic():
+            for answer_data in answers_data:
+                question_id = answer_data['question_id']
+                answer_text = answer_data['answer']
+                
+                # Update or create the answer
+                Answer.objects.update_or_create(
+                    user=user,
+                    question_id=question_id,
+                    defaults={'answer': answer_text}
+                )
+        
+        # Get recommended films based on quiz answers
+        
+        os.sleep(10) # SIMULATE PROCESSING TIME
+        
+        # LOGIC GOES HERE LATER
+
+        recommended_films = Film.objects.all()[:10]
+        
+        return Response({
+            'message': 'Quiz answers saved successfully',
+            'recommended_films': FilmSerializer(recommended_films, many=True).data
+        }, status=status.HTTP_201_CREATED)
