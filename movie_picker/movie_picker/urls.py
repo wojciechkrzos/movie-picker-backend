@@ -32,5 +32,5 @@ urlpatterns = [
         GoogleLoginCallback.as_view(),
         name="google_login_callback",
     ),
-
+    path('api/v1/movies/', include('movie.urls')),
 ]
