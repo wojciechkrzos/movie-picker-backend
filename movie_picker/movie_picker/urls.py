@@ -18,8 +18,11 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from authentication.views import GoogleLogin, GoogleLoginCallback, LoginPage, SuccessPage
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from movie.views import APIRootView, health_check
 
 urlpatterns = [
+    path('', APIRootView.as_view(), name='api_root'),
+    path('health/', health_check, name='health_check'),
     path('admin/', admin.site.urls),
     path('login/', LoginPage.as_view(), name='login'),
     path('success/', SuccessPage.as_view(), name='success'),
