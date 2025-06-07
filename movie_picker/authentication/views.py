@@ -14,7 +14,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.generics import RetrieveAPIView, ListAPIView
 from django.db import transaction
-from .models import User, Question, Answer
+from .models import Question, Answer
 from .serializers import UserProfileSerializer, QuizAnswersSerializer, QuestionSerializer
 from movie.models import Film
 from movie.serializers import FilmSerializer
@@ -104,7 +104,7 @@ class UserProfileView(RetrieveAPIView):
     """
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_object(self):
         return self.request.user
 
@@ -123,37 +123,37 @@ class QuizAnswersView(APIView):
     POST quiz answers and return recommended films with details
     """
     permission_classes = [IsAuthenticated]
-    
+
     def post(self, request):
         serializer = QuizAnswersSerializer(data=request.data)
-        
+
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         answers_data = serializer.validated_data['answers']
         user = request.user
-        
+
         # Save quiz answers
         with transaction.atomic():
             for answer_data in answers_data:
                 question_id = answer_data['question_id']
                 answer_text = answer_data['answer']
-                
+
                 # Update or create the answer
                 Answer.objects.update_or_create(
                     user=user,
                     question_id=question_id,
                     defaults={'answer': answer_text}
                 )
-        
+
         # Get recommended films based on quiz answers
-        
-        os.sleep(10) # SIMULATE PROCESSING TIME
-        
+
+        os.sleep(10)  # SIMULATE PROCESSING TIME
+
         # LOGIC GOES HERE LATER
 
         recommended_films = Film.objects.all()[:10]
-        
+
         return Response({
             'message': 'Quiz answers saved successfully',
             'recommended_films': FilmSerializer(recommended_films, many=True).data

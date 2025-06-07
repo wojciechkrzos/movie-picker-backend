@@ -1,13 +1,12 @@
-from rest_framework import generics, status, filters
+from rest_framework import generics, filters
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Avg
-from django.db import models
+from django.db.models import Avg
 from .models import (
-    Film, Actor, Director, Category, Tag, StreamingService, 
+    Film, Actor, Director, Category, Tag, StreamingService,
     WatchedFilm
 )
 from .serializers import (
@@ -28,10 +27,11 @@ class FilmListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['release_date', 'language']
-    search_fields = ['title', 'actors__first_name', 'actors__last_name', 'directors__first_name', 'directors__last_name']
+    search_fields = ['title', 'actors__first_name', 'actors__last_name',
+                     'directors__first_name', 'directors__last_name']
     ordering_fields = ['title', 'release_date', 'created_at']
     ordering = ['-created_at']
-    
+
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return FilmListSerializer
@@ -152,11 +152,11 @@ class WatchedFilmListCreateView(generics.ListCreateAPIView):
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['created_at', 'review']
     ordering = ['-created_at']
-    
+
     def get_queryset(self):
         # Only return watched films for the current user
         return WatchedFilm.objects.filter(user=self.request.user)
-    
+
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return WatchedFilmCreateSerializer
@@ -171,7 +171,7 @@ class WatchedFilmDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     serializer_class = WatchedFilmSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         return WatchedFilm.objects.filter(user=self.request.user)
 
@@ -181,7 +181,7 @@ class MyWatchedFilmsView(generics.ListAPIView):
     """Get all films watched by the authenticated user with detailed information"""
     serializer_class = FilmDetailSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         watched_films = WatchedFilm.objects.filter(user=self.request.user).values_list('film_id', flat=True)
         return Film.objects.filter(id__in=watched_films)
@@ -192,24 +192,24 @@ class RecommendedFilmsView(APIView):
     Get film recommendations based on user's streaming services and preferences
     """
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         user = request.user
-        
+
         user_streaming_services = user.streaming_services.all()
-        
+
         available_films = Film.objects.filter(
             streaming_services__in=user_streaming_services
         ).distinct()
-        
+
         watched_film_ids = WatchedFilm.objects.filter(
             user=user
         ).values_list('film_id', flat=True)
-        
+
         recommended_films = available_films.exclude(id__in=watched_film_ids)
-        
+
         # RECOMMENDATION LOGIC HERE
-        
+
         serializer = FilmListSerializer(recommended_films[:20], many=True)
         return Response({
             'message': f'Recommendations based on your {user_streaming_services.count()} streaming services',
@@ -223,14 +223,14 @@ class RecommendedFilmsView(APIView):
 def user_stats(request):
     """Get statistics for the authenticated user"""
     user = request.user
-    
+
     watched_count = WatchedFilm.objects.filter(user=user).count()
     reviewed_count = WatchedFilm.objects.filter(user=user, review__isnull=False).count()
     streaming_services_count = user.streaming_services.count()
-    
+
     reviews = WatchedFilm.objects.filter(user=user, review__isnull=False)
     avg_review = reviews.aggregate(avg=Avg('review'))['avg'] if reviews.exists() else None
-    
+
     return Response({
         'username': user.username,
         'watched_films_count': watched_count,

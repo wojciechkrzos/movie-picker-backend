@@ -72,10 +72,11 @@ class FilmStreamingServiceInline(admin.TabularInline):
 class FilmAdmin(admin.ModelAdmin):
     list_display = ['title', 'release_date', 'language', 'created_at']
     list_filter = ['release_date', 'language', 'created_at', 'categories', 'streaming_services']
-    search_fields = ['title', 'actors__first_name', 'actors__last_name', 'directors__first_name', 'directors__last_name']
+    search_fields = ['title', 'actors__first_name', 'actors__last_name',
+                     'directors__first_name', 'directors__last_name']
     ordering = ['-created_at']
     date_hierarchy = 'release_date'
-    
+
     inlines = [
         FilmActorInline,
         FilmDirectorInline,
