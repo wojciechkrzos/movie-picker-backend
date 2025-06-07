@@ -1,6 +1,7 @@
 # authentication/models.py
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import AbstractUser
 
 
 class TimestampedModel(models.Model):
@@ -11,16 +12,19 @@ class TimestampedModel(models.Model):
         abstract = True
 
 
-class User(TimestampedModel):
-    username = models.CharField(max_length=255)
-    email = models.EmailField(max_length=255)
-    password = models.CharField(max_length=255)
+class User(AbstractUser, TimestampedModel):
+    # Override email field to make it unique and required
+    email = models.EmailField(unique=True)
+
+    # Use email as the username field for authentication
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
 
     streaming_services = models.ManyToManyField(
         'movie.StreamingService', through='UserStreamingService', related_name='users')
 
     def __str__(self):
-        return self.username
+        return self.email
 
 
 class UserStreamingService(TimestampedModel):

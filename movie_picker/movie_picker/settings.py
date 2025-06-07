@@ -187,6 +187,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Auth
+AUTH_USER_MODEL = 'authentication.User'  # Use our custom User model
 ACCOUNT_AUTHENTICATION_METHOD = "email"  # Use Email / Password authentication
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
@@ -244,6 +245,16 @@ SIMPLE_JWT = {
 # dj-rest-auth configuration
 REST_USE_JWT = True
 JWT_AUTH_COOKIE = 'jwt-auth'
+JWT_AUTH_REFRESH_COOKIE = 'jwt-refresh'
+JWT_AUTH_HTTPONLY = False  # Set to False to allow frontend access to tokens
+
+# Additional JWT settings for dj-rest-auth
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'jwt-auth',
+    'JWT_AUTH_REFRESH_COOKIE': 'jwt-refresh',
+    'JWT_AUTH_HTTPONLY': False,
+}
 
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
