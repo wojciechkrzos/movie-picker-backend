@@ -63,6 +63,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'django_filters',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -197,7 +200,18 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+
+# drf-spectacular settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Movie Picker API',
+    'DESCRIPTION': 'API documentation for the Movie Picker project',
+    'VERSION': '4.2.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
+
 
 # JWT Configuration
 SIMPLE_JWT = {
