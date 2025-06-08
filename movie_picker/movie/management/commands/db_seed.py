@@ -112,6 +112,15 @@ class Command(BaseCommand):
         if Film.objects.filter(title=movie_data['title']).exists():
             return
 
+        # Debug: Print movie data to see what we're receiving
+        print(f"DEBUG: Processing movie: {movie_data.get('title', 'Unknown')}")
+        print(f"DEBUG: Overview available: {bool(movie_data.get('overview'))}")
+        if movie_data.get('overview'):
+            print(f"DEBUG: Overview length: {len(movie_data.get('overview', ''))}")
+            print(f"DEBUG: Overview preview: {movie_data.get('overview', '')[:100]}...")
+        else:
+            print("DEBUG: No overview in movie_data")
+
         release_date = None
         if movie_data.get('release_date'):
             try:
@@ -119,11 +128,17 @@ class Command(BaseCommand):
             except ValueError:
                 pass
 
+        overview_text = movie_data.get('overview', '')
+        print(f"DEBUG: Creating film with overview: {bool(overview_text)}")
+
         film = Film.objects.create(
             title=movie_data['title'],
             release_date=release_date or datetime.now().date(),
-            language=movie_data.get('original_language', 'en')
+            language=movie_data.get('original_language', 'en'),
+            overview=overview_text
         )
+
+        print(f"DEBUG: Film created. Overview in DB: {bool(film.overview)}")
 
         self.add_movie_details(film, movie_data['id'])
 
