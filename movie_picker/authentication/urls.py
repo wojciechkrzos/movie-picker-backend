@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     GoogleLogin, GoogleLoginCallback, LoginPage, protected_view,
-    UserProfileView, QuestionsListView, QuizAnswersView
+    UserProfileView, QuestionsListView, QuizAnswersView, UserStreamingServicesView
 )
 
 urlpatterns = [
@@ -14,4 +14,5 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='user_profile'),  # Endpoint #2
     path('questions/', QuestionsListView.as_view(), name='questions_list'),
     path('quiz-answers/', QuizAnswersView.as_view(), name='quiz_answers'),  # Endpoint #3
+    path('streaming-services/', UserStreamingServicesView.as_view(), name='user_streaming_services'),  # New endpoint
 ]

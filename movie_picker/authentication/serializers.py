@@ -26,6 +26,31 @@ class UserStreamingServiceSerializer(serializers.ModelSerializer):
         fields = ['streaming_service']
 
 
+class UserStreamingServiceUpdateSerializer(serializers.Serializer):
+    """Serializer for updating user's streaming services"""
+    streaming_service_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text="List of streaming service IDs to associate with the user"
+    )
+
+    def validate_streaming_service_ids(self, value):
+        """Validate that all streaming service IDs exist"""
+        from movie.models import StreamingService
+        existing_services = StreamingService.objects.filter(id__in=value).count()
+        if existing_services != len(value):
+            raise serializers.ValidationError("One or more streaming service IDs are invalid.")
+        return value
+
+    def update(self, instance, validated_data):
+        """Update user's streaming services"""
+        streaming_service_ids = validated_data.get('streaming_service_ids', [])
+
+        # Clear existing streaming services and set new ones
+        instance.streaming_services.set(streaming_service_ids)
+
+        return instance
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     streaming_services = UserStreamingServiceSerializer(
         source='userstreamingservice_set', many=True, read_only=True
@@ -50,7 +75,7 @@ class QuizAnswersSerializer(serializers.Serializer):
         question_ids = [answer['question_id'] for answer in value]
         existing_questions = Question.objects.filter(id__in=question_ids).count()
 
-        if existing_questions != len(set(question_ids)):
-            raise serializers.ValidationError("Some question IDs do not exist")
+        if existing_questions != len(question_ids):
+            raise serializers.ValidationError("One or more question IDs are invalid.")
 
         return value

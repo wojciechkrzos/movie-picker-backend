@@ -12,10 +12,13 @@ from django.shortcuts import render
 from django.views import View
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.generics import RetrieveAPIView, ListAPIView
+from rest_framework.generics import RetrieveAPIView, ListAPIView, UpdateAPIView
 from django.db import transaction
 from .models import Question, Answer
-from .serializers import UserProfileSerializer, QuizAnswersSerializer, QuestionSerializer
+from .serializers import (
+    QuestionSerializer, QuizAnswersSerializer, UserProfileSerializer,
+    UserStreamingServiceUpdateSerializer
+)
 from movie.models import Film
 from movie.serializers import FilmSerializer
 
@@ -118,6 +121,33 @@ class QuestionsListView(ListAPIView):
     permission_classes = [IsAuthenticated]
 
 
+class UserStreamingServicesView(UpdateAPIView):
+    """
+    PUT/PATCH: Update user's streaming services
+    """
+    serializer_class = UserStreamingServiceUpdateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            # Return updated user profile with streaming services
+            profile_serializer = UserProfileSerializer(user)
+            return Response({
+                'message': 'Streaming services updated successfully',
+                'user': profile_serializer.data
+            }, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class QuizAnswersView(APIView):
     """
     POST quiz answers and return recommended films with details
@@ -144,9 +174,7 @@ class QuizAnswersView(APIView):
                     user=user,
                     question_id=question_id,
                     defaults={'answer': answer_text}
-                )
-
-        # Get recommended films based on quiz answers
+                )        # Get recommended films based on quiz answers
 
         os.sleep(10)  # SIMULATE PROCESSING TIME
 
