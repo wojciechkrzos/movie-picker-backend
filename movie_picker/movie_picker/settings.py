@@ -187,6 +187,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Auth
+AUTH_USER_MODEL = 'authentication.User'  # Use our custom User model
 ACCOUNT_AUTHENTICATION_METHOD = "email"  # Use Email / Password authentication
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
@@ -244,11 +245,25 @@ SIMPLE_JWT = {
 # dj-rest-auth configuration
 REST_USE_JWT = True
 JWT_AUTH_COOKIE = 'jwt-auth'
+JWT_AUTH_REFRESH_COOKIE = 'jwt-refresh'
+JWT_AUTH_HTTPONLY = False  # Set to False to allow frontend access to tokens
+
+# Additional JWT settings for dj-rest-auth
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'jwt-auth',
+    'JWT_AUTH_REFRESH_COOKIE': 'jwt-refresh',
+    'JWT_AUTH_HTTPONLY': False,
+}
 
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+    'http://movie-picker.s.solvro.pl',
+    'https://movie-picker.s.solvro.pl',
 ]
 
 # Allow credentials in CORS requests (needed for JWT cookies)
