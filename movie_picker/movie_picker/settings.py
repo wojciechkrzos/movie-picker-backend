@@ -18,8 +18,8 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Get venv
-load_dotenv(".env")
+# Get venv - load from project root
+load_dotenv(BASE_DIR.parent / ".env")
 
 # Load Google OAuth credentials
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID')

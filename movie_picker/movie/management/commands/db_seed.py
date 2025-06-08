@@ -9,6 +9,7 @@ from movie.models import (
     Film, Actor, Director, Category,
     FilmActor, FilmDirector, FilmCategory
 )
+from authentication.models import Question
 
 load_dotenv()
 
@@ -33,6 +34,11 @@ class Command(BaseCommand):
             action='store_true',
             help='Fetch top rated movies'
         )
+        parser.add_argument(
+            '--questions',
+            action='store_true',
+            help='Seed quiz questions'
+        )
 
     def __init__(self):
         super().__init__()
@@ -46,13 +52,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         pages = options['pages']
 
+        if options['questions']:
+            self.stdout.write("Seeding quiz questions...")
+            self.seed_questions()
+
         if options['popular']:
             self.stdout.write("Fetching popular movies...")
             self.fetch_movies('popular', pages)
         elif options['top_rated']:
             self.stdout.write("Fetching top rated movies...")
             self.fetch_movies('top_rated', pages)
-        else:
+        elif not options['questions']:  # Only fetch movies if not just seeding questions
             self.stdout.write("Fetching both popular and top rated movies...")
             self.fetch_movies('popular', pages)
             self.fetch_movies('top_rated', pages)
@@ -102,6 +112,15 @@ class Command(BaseCommand):
         if Film.objects.filter(title=movie_data['title']).exists():
             return
 
+        # Debug: Print movie data to see what we're receiving
+        print(f"DEBUG: Processing movie: {movie_data.get('title', 'Unknown')}")
+        print(f"DEBUG: Overview available: {bool(movie_data.get('overview'))}")
+        if movie_data.get('overview'):
+            print(f"DEBUG: Overview length: {len(movie_data.get('overview', ''))}")
+            print(f"DEBUG: Overview preview: {movie_data.get('overview', '')[:100]}...")
+        else:
+            print("DEBUG: No overview in movie_data")
+
         release_date = None
         if movie_data.get('release_date'):
             try:
@@ -109,11 +128,25 @@ class Command(BaseCommand):
             except ValueError:
                 pass
 
+        overview_text = movie_data.get('overview', '')
+        print(f"DEBUG: Creating film with overview: {bool(overview_text)}")
+
+        # Construct poster URL
+        poster_url = None
+        if movie_data.get('poster_path'):
+            poster_url = f"{self.image_base_url}{movie_data['poster_path']}"
+            print(f"DEBUG: Poster URL: {poster_url}")
+
         film = Film.objects.create(
             title=movie_data['title'],
             release_date=release_date or datetime.now().date(),
-            language=movie_data.get('original_language', 'en')
+            language=movie_data.get('original_language', 'en'),
+            overview=overview_text,
+            poster_url=poster_url
         )
+
+        print(f"DEBUG: Film created. Overview in DB: {bool(film.overview)}")
+        print(f"DEBUG: Film created. Poster URL in DB: {bool(film.poster_url)}")
 
         self.add_movie_details(film, movie_data['id'])
 
@@ -199,3 +232,27 @@ class Command(BaseCommand):
                     name=genre_map[genre_id]
                 )
                 FilmCategory.objects.get_or_create(film=film, category=category)
+
+    def seed_questions(self):
+        """Add predefined quiz questions to the database"""
+        questions_data = [
+            {
+                'question': "What's your mood today?",
+                'available_answers': ["Energetic", "Bored", "Chill", "Jittery"]
+            },
+            {
+                'question': "What type of movie do you prefer?",
+                'available_answers': ["Action-packed", "Emotional", "Mind-bending", "Light-hearted"]
+            }
+        ]
+
+        for question_data in questions_data:
+            question, created = Question.objects.get_or_create(
+                question=question_data['question'],
+                defaults={'available_answers': question_data['available_answers']}
+            )
+
+            if created:
+                self.stdout.write(f"Created question: {question.question}")
+            else:
+                self.stdout.write(f"Question already exists: {question.question}")
