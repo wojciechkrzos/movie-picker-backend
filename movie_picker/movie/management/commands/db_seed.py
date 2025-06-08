@@ -131,14 +131,22 @@ class Command(BaseCommand):
         overview_text = movie_data.get('overview', '')
         print(f"DEBUG: Creating film with overview: {bool(overview_text)}")
 
+        # Construct poster URL
+        poster_url = None
+        if movie_data.get('poster_path'):
+            poster_url = f"{self.image_base_url}{movie_data['poster_path']}"
+            print(f"DEBUG: Poster URL: {poster_url}")
+
         film = Film.objects.create(
             title=movie_data['title'],
             release_date=release_date or datetime.now().date(),
             language=movie_data.get('original_language', 'en'),
-            overview=overview_text
+            overview=overview_text,
+            poster_url=poster_url
         )
 
         print(f"DEBUG: Film created. Overview in DB: {bool(film.overview)}")
+        print(f"DEBUG: Film created. Poster URL in DB: {bool(film.poster_url)}")
 
         self.add_movie_details(film, movie_data['id'])
 

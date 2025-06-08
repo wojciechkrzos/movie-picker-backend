@@ -44,7 +44,7 @@ class FilmListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Film
         fields = [
-            'id', 'title', 'release_date', 'language', 'overview', 'created_at', 'modified_at',
+            'id', 'title', 'release_date', 'language', 'overview', 'poster_url', 'created_at', 'modified_at',
             'actors_count', 'directors_count', 'categories_count'
         ]
 

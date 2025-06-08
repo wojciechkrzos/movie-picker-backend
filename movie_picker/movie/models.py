@@ -17,6 +17,7 @@ class Film(TimestampedModel):
     release_date = models.DateField()
     language = models.CharField(max_length=255)
     overview = models.TextField(blank=True, null=True)
+    poster_url = models.URLField(blank=True, null=True)
 
     actors = models.ManyToManyField('Actor', through='FilmActor')
     directors = models.ManyToManyField('Director', through='FilmDirector')
