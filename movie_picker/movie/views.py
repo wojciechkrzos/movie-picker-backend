@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Avg, Q, Count, Case, When, IntegerField
+from django.db.models import Avg
 from .models import (
     Film, Actor, Director, Category, Tag, StreamingService,
     WatchedFilm
@@ -205,7 +205,7 @@ class RecommendedFilmsView(APIView):
 
         # Get user's streaming services
         user_streaming_services = user.streaming_services.all()
-        
+
         if not user_streaming_services.exists():
             return Response({
                 'message': 'Please select your streaming services first to get recommendations',
@@ -232,8 +232,10 @@ class RecommendedFilmsView(APIView):
         final_recommendations = recommended_films[:5]
 
         serializer = FilmListSerializer(final_recommendations, many=True)
+        streaming_count = user_streaming_services.count()
+        message = f'Recommendations based on your {streaming_count} streaming services and preferences'
         return Response({
-            'message': f'Recommendations based on your {user_streaming_services.count()} streaming services and preferences',
+            'message': message,
             'streaming_services': [service.name for service in user_streaming_services],
             'recommendations': serializer.data
         })
@@ -248,27 +250,27 @@ class RecommendedFilmsView(APIView):
         """
         # Get user's quiz answers
         user_answers = Answer.objects.filter(user=user).select_related('question')
-        
+
         # Create preference weights based on quiz answers
         category_weights = self._get_category_weights_from_quiz(user_answers)
-        
+
         # Get user's review preferences
         review_preferences = self._get_review_preferences(user)
-        
+
         # Score films based on multiple factors
         scored_films = []
-        
+
         for film in films_queryset.prefetch_related('categories', 'actors', 'directors'):
             score = self._calculate_film_score(film, category_weights, review_preferences, user)
             scored_films.append((film, score))
-        
+
         # Sort by score (highest first) and return films
         scored_films.sort(key=lambda x: x[1], reverse=True)
-        
+
         # Add some randomization to avoid always showing the same films
         top_films = [film for film, score in scored_films[:40]]
         random.shuffle(top_films[:10])  # Shuffle only the top 10 to maintain quality
-        
+
         return top_films
 
     def _get_category_weights_from_quiz(self, user_answers):
@@ -290,11 +292,11 @@ class RecommendedFilmsView(APIView):
             'Crime': 0,
             'Mystery': 0
         }
-        
+
         for answer in user_answers:
             question_text = answer.question.question.lower()
             answer_text = answer.answer.lower()
-            
+
             # Map mood-based answers to categories
             if "mood" in question_text:
                 if answer_text == "energetic":
@@ -313,7 +315,7 @@ class RecommendedFilmsView(APIView):
                     category_weights['Horror'] += 3
                     category_weights['Thriller'] += 3
                     category_weights['Mystery'] += 2
-            
+
             # Map preference-based answers to categories
             elif "type of movie" in question_text or "prefer" in question_text:
                 if answer_text == "action-packed":
@@ -331,7 +333,7 @@ class RecommendedFilmsView(APIView):
                     category_weights['Comedy'] += 4
                     category_weights['Animation'] += 2
                     category_weights['Romance'] += 1
-            
+
             # Map viewing context to categories
             elif "how do you prefer to watch" in question_text:
                 if "alone for focus" in answer_text:
@@ -349,7 +351,7 @@ class RecommendedFilmsView(APIView):
                     category_weights['Animation'] += 3
                     category_weights['Adventure'] += 2
                     category_weights['Comedy'] += 2
-            
+
             # Map what draws to movie preferences
             elif "what draws you" in question_text:
                 if "amazing visuals" in answer_text:
@@ -367,7 +369,7 @@ class RecommendedFilmsView(APIView):
                 elif "director's reputation" in answer_text:
                     # This will be handled in director-based scoring
                     pass
-        
+
         return category_weights
 
     def _get_review_preferences(self, user):
@@ -375,21 +377,21 @@ class RecommendedFilmsView(APIView):
         Analyze user's review history to understand preferences
         """
         highly_rated_films = WatchedFilm.objects.filter(
-            user=user, 
+            user=user,
             review__gte=4
         ).select_related('film').prefetch_related('film__categories', 'film__actors', 'film__directors')
-        
+
         # Get categories, actors, and directors from highly rated films
         preferred_categories = []
         preferred_actors = []
         preferred_directors = []
-        
+
         for watched in highly_rated_films:
             film = watched.film
             preferred_categories.extend([cat.name for cat in film.categories.all()])
             preferred_actors.extend([f"{actor.first_name} {actor.last_name}" for actor in film.actors.all()])
             preferred_directors.extend([f"{dir.first_name} {dir.last_name}" for dir in film.directors.all()])
-        
+
         return {
             'categories': preferred_categories,
             'actors': preferred_actors,
@@ -404,34 +406,34 @@ class RecommendedFilmsView(APIView):
         Calculate a recommendation score for a film based on various factors
         """
         score = 0
-        
+
         # Category-based scoring from quiz answers
         film_categories = [cat.name for cat in film.categories.all()]
         for category in film_categories:
             if category in category_weights:
                 score += category_weights[category] * 10
-        
+
         # Boost score based on user's review history preferences
         for category in film_categories:
             if category in review_preferences['categories']:
                 # Count how many times this category appears in user's highly rated films
                 category_frequency = review_preferences['categories'].count(category)
                 score += category_frequency * 15
-        
+
         # Actor-based scoring
         film_actors = [f"{actor.first_name} {actor.last_name}" for actor in film.actors.all()]
         for actor in film_actors:
             if actor in review_preferences['actors']:
                 actor_frequency = review_preferences['actors'].count(actor)
                 score += actor_frequency * 20
-        
+
         # Director-based scoring
         film_directors = [f"{dir.first_name} {dir.last_name}" for dir in film.directors.all()]
         for director in film_directors:
             if director in review_preferences['directors']:
                 director_frequency = review_preferences['directors'].count(director)
                 score += director_frequency * 25
-        
+
         # Time period preferences from quiz
         time_period_preference = self._get_time_period_preference(user)
         if time_period_preference and film.release_date:
@@ -444,14 +446,14 @@ class RecommendedFilmsView(APIView):
                 score += 15
             elif time_period_preference == "recent" and release_year >= 2015:
                 score += 15
-        
+
         # Add some base scoring to ensure variety
         score += random.randint(1, 10)
-        
+
         # Boost newer films slightly for users with no time preference (encourage discovering recent content)
         if not time_period_preference and film.release_date and film.release_date.year >= 2020:
             score += 5
-        
+
         return score
 
     def _get_time_period_preference(self, user):
@@ -463,7 +465,7 @@ class RecommendedFilmsView(APIView):
                 user=user,
                 question__question__icontains="time period"
             ).first()
-            
+
             if time_answer:
                 answer_text = time_answer.answer.lower()
                 if "classic" in answer_text:
@@ -474,9 +476,9 @@ class RecommendedFilmsView(APIView):
                     return "modern"
                 elif "recent" in answer_text:
                     return "recent"
-        except:
+        except Exception:
             pass
-        
+
         return None
 
 
