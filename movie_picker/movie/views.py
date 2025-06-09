@@ -13,7 +13,7 @@ from .serializers import (
     FilmListSerializer, FilmDetailSerializer, ActorSerializer,
     DirectorSerializer, CategorySerializer, TagSerializer,
     StreamingServiceSerializer, WatchedFilmSerializer,
-    WatchedFilmCreateSerializer
+    WatchedFilmCreateSerializer, WatchedFilmWithDetailsSerializer
 )
 from django.http import JsonResponse
 from django.views import View
@@ -167,7 +167,7 @@ class WatchedFilmListCreateView(generics.ListCreateAPIView):
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return WatchedFilmCreateSerializer
-        return WatchedFilmSerializer
+        return WatchedFilmWithDetailsSerializer
 
 
 class WatchedFilmDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -176,7 +176,7 @@ class WatchedFilmDetailView(generics.RetrieveUpdateDestroyAPIView):
     PUT/PATCH: Update review for a watched film
     DELETE: Remove film from watched list
     """
-    serializer_class = WatchedFilmSerializer
+    serializer_class = WatchedFilmWithDetailsSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):

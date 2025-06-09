@@ -168,3 +168,13 @@ class WatchedFilmCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+
+
+class WatchedFilmWithDetailsSerializer(serializers.ModelSerializer):
+    """Serializer for watched films with full film details including description and photo"""
+    film = FilmListSerializer(read_only=True)
+    user_username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = WatchedFilm
+        fields = ['id', 'film', 'user_username', 'review', 'created_at', 'modified_at']
