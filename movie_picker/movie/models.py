@@ -18,6 +18,7 @@ class Film(TimestampedModel):
     language = models.CharField(max_length=255)
     overview = models.TextField(blank=True, null=True)
     poster_url = models.URLField(blank=True, null=True)
+    tmdb_id = models.IntegerField(unique=True, null=True, blank=True)
 
     actors = models.ManyToManyField('Actor', through='FilmActor')
     directors = models.ManyToManyField('Director', through='FilmDirector')
@@ -57,6 +58,8 @@ class Tag(TimestampedModel):
 
 class StreamingService(TimestampedModel):
     name = models.CharField(max_length=255)
+    tmdb_provider_id = models.IntegerField(unique=True, null=True, blank=True)
+    logo_path = models.URLField(blank=True, null=True)
 
     class Meta:
         unique_together = ('id', 'name')

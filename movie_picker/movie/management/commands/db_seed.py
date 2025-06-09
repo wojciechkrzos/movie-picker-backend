@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from movie.models import (
     Film, Actor, Director, Category,
-    FilmActor, FilmDirector, FilmCategory
+    FilmActor, FilmDirector, FilmCategory, StreamingService, FilmStreamingService
 )
 from authentication.models import Question
 
@@ -39,6 +39,11 @@ class Command(BaseCommand):
             action='store_true',
             help='Seed quiz questions'
         )
+        parser.add_argument(
+            '--providers',
+            action='store_true',
+            help='Fetch streaming providers from TMDb'
+        )
 
     def __init__(self):
         super().__init__()
@@ -52,6 +57,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         pages = options['pages']
 
+        if options['providers']:
+            self.stdout.write("Fetching streaming providers...")
+            self.fetch_streaming_providers()
+
         if options['questions']:
             self.stdout.write("Seeding quiz questions...")
             self.seed_questions()
@@ -62,7 +71,7 @@ class Command(BaseCommand):
         elif options['top_rated']:
             self.stdout.write("Fetching top rated movies...")
             self.fetch_movies('top_rated', pages)
-        elif not options['questions']:  # Only fetch movies if not just seeding questions
+        elif not options['questions'] and not options['providers']:  # Only fetch movies if not just seeding questions or providers
             self.stdout.write("Fetching both popular and top rated movies...")
             self.fetch_movies('popular', pages)
             self.fetch_movies('top_rated', pages)
@@ -109,6 +118,11 @@ class Command(BaseCommand):
 
     def create_movie(self, movie_data):
         """Create movie record with detailed information"""
+        tmdb_id = movie_data['id']
+
+        # Check if movie already exists by tmdb_id first, then by title
+        if Film.objects.filter(tmdb_id=tmdb_id).exists():
+            return
         if Film.objects.filter(title=movie_data['title']).exists():
             return
 
@@ -142,13 +156,16 @@ class Command(BaseCommand):
             release_date=release_date or datetime.now().date(),
             language=movie_data.get('original_language', 'en'),
             overview=overview_text,
-            poster_url=poster_url
+            poster_url=poster_url,
+            tmdb_id=tmdb_id
         )
 
         print(f"DEBUG: Film created. Overview in DB: {bool(film.overview)}")
         print(f"DEBUG: Film created. Poster URL in DB: {bool(film.poster_url)}")
 
-        self.add_movie_details(film, movie_data['id'])
+        self.add_movie_details(film, tmdb_id)
+
+        self.add_movie_streaming_providers(film, tmdb_id)
 
         if movie_data.get('genre_ids'):
             self.add_genres(film, movie_data['genre_ids'])
@@ -256,3 +273,120 @@ class Command(BaseCommand):
                 self.stdout.write(f"Created question: {question.question}")
             else:
                 self.stdout.write(f"Question already exists: {question.question}")
+
+    def fetch_streaming_providers(self):
+        """Fetch streaming providers from TMDb API"""
+        url = f"{self.base_url}/watch/providers/movie"
+        params = {
+            'api_key': self.api_key,
+            'watch_region': 'US' # for now only US, we can change this later
+        }
+
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            if 'results' in data:
+                self.process_streaming_providers(data['results'])
+            else:
+                self.stdout.write(
+                    self.style.WARNING("No streaming providers found in response")
+                )
+
+        except requests.RequestException as e:
+            self.stdout.write(
+                self.style.ERROR(f"Error fetching streaming providers: {e}")
+            )
+
+    def process_streaming_providers(self, providers):
+        """Process and save streaming providers to database"""
+        for provider_data in providers:
+            try:
+                with transaction.atomic():
+                    self.create_streaming_provider(provider_data)
+            except Exception as e:
+                self.stdout.write(
+                    self.style.WARNING(f"Error processing provider {provider_data.get('provider_name', 'Unknown')}: {e}")
+                )
+
+    def create_streaming_provider(self, provider_data):
+        """Create streaming provider record"""
+        tmdb_provider_id = provider_data['provider_id']
+
+        if StreamingService.objects.filter(tmdb_provider_id=tmdb_provider_id).exists():
+            return
+
+        logo_url = None
+        if provider_data.get('logo_path'):
+            logo_url = f"{self.image_base_url}{provider_data['logo_path']}"
+
+        provider = StreamingService.objects.create(
+            name=provider_data['provider_name'],
+            tmdb_provider_id=tmdb_provider_id,
+            logo_path=logo_url
+        )
+
+        self.stdout.write(f"Created streaming provider: {provider.name}")
+
+    def add_movie_streaming_providers(self, film, tmdb_id):
+        """Fetch and add streaming providers for a specific movie"""
+        url = f"{self.base_url}/movie/{tmdb_id}/watch/providers"
+        params = {
+            'api_key': self.api_key
+        }
+
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            if 'results' in data and 'US' in data['results']:
+                us_providers = data['results']['US']
+
+                all_providers = []
+
+                if 'flatrate' in us_providers:
+                    all_providers.extend(us_providers['flatrate'])
+
+                if 'rent' in us_providers:
+                    all_providers.extend(us_providers['rent'])
+
+                if 'buy' in us_providers:
+                    all_providers.extend(us_providers['buy'])
+
+                for provider_data in all_providers:
+                    self.link_movie_to_provider(film, provider_data)
+
+        except requests.RequestException as e:
+            self.stdout.write(
+                self.style.WARNING(f"Error fetching streaming providers for {film.title}: {e}")
+            )
+
+    def link_movie_to_provider(self, film, provider_data):
+        """Link a movie to a streaming provider"""
+        tmdb_provider_id = provider_data['provider_id']
+
+        try:
+            streaming_service = StreamingService.objects.get(tmdb_provider_id=tmdb_provider_id)
+
+            FilmStreamingService.objects.get_or_create(
+                film=film,
+                streaming_service=streaming_service
+            )
+
+        except StreamingService.DoesNotExist:
+            logo_url = None
+            if provider_data.get('logo_path'):
+                logo_url = f"{self.image_base_url}{provider_data['logo_path']}"
+
+            streaming_service = StreamingService.objects.create(
+                name=provider_data['provider_name'],
+                tmdb_provider_id=tmdb_provider_id,
+                logo_path=logo_url
+            )
+
+            FilmStreamingService.objects.get_or_create(
+                film=film,
+                streaming_service=streaming_service
+            )
