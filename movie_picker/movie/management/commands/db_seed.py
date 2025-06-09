@@ -71,7 +71,8 @@ class Command(BaseCommand):
         elif options['top_rated']:
             self.stdout.write("Fetching top rated movies...")
             self.fetch_movies('top_rated', pages)
-        elif not options['questions'] and not options['providers']:  # Only fetch movies if not just seeding questions or providers
+        elif not options['questions'] and not options['providers']:
+            # Only fetch movies if not just seeding questions or providers
             self.stdout.write("Fetching both popular and top rated movies...")
             self.fetch_movies('popular', pages)
             self.fetch_movies('top_rated', pages)
@@ -279,7 +280,7 @@ class Command(BaseCommand):
         url = f"{self.base_url}/watch/providers/movie"
         params = {
             'api_key': self.api_key,
-            'watch_region': 'US' # for now only US, we can change this later
+            'watch_region': 'US'  # for now only US, we can change this later
         }
 
         try:
@@ -307,7 +308,10 @@ class Command(BaseCommand):
                     self.create_streaming_provider(provider_data)
             except Exception as e:
                 self.stdout.write(
-                    self.style.WARNING(f"Error processing provider {provider_data.get('provider_name', 'Unknown')}: {e}")
+                    self.style.WARNING(
+                        f"Error processing provider "
+                        f"{provider_data.get('provider_name', 'Unknown')}: {e}"
+                    )
                 )
 
     def create_streaming_provider(self, provider_data):
