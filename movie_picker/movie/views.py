@@ -30,7 +30,7 @@ class FilmListCreateView(generics.ListCreateAPIView):
     queryset = Film.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['release_date', 'language']
+    filterset_fields = ['release_date', 'language', 'tmdb_id']
     search_fields = ['title', 'actors__first_name', 'actors__last_name',
                      'directors__first_name', 'directors__last_name']
     ordering_fields = ['title', 'release_date', 'created_at']
@@ -133,7 +133,8 @@ class StreamingServiceListCreateView(generics.ListCreateAPIView):
     queryset = StreamingService.objects.all()
     serializer_class = StreamingServiceSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['tmdb_provider_id']
     search_fields = ['name']
     ordering = ['name']
 
