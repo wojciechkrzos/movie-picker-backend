@@ -261,6 +261,22 @@ class Command(BaseCommand):
             {
                 'question': "What type of movie do you prefer?",
                 'available_answers': ["Action-packed", "Emotional", "Mind-bending", "Light-hearted"]
+            },
+            {
+                'question': "What's your favorite time period for movies?",
+                'available_answers': ["Classic (before 1980)", "Retro (1980-2000)", "Modern (2000-2015)", "Recent (2015+)"]
+            },
+            {
+                'question': "How do you prefer to watch movies?",
+                'available_answers': ["Alone for focus", "With friends for fun", "Date night romance", "Family time"]
+            },
+            {
+                'question': "What movie length do you prefer?",
+                'available_answers': ["Short and sweet (under 90 min)", "Standard length (90-120 min)", "Epic length (over 2 hours)", "No preference"]
+            },
+            {
+                'question': "What draws you to a movie most?",
+                'available_answers': ["Amazing visuals", "Great storyline", "Favorite actors", "Director's reputation"]
             }
         ]
 
