@@ -2,7 +2,6 @@ from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
 from django.conf import settings
-import os
 import requests
 from django.urls import reverse
 from rest_framework import status
@@ -19,8 +18,6 @@ from .serializers import (
     QuestionSerializer, QuizAnswersSerializer, UserProfileSerializer,
     UserStreamingServiceUpdateSerializer
 )
-from movie.models import Film
-from movie.serializers import FilmSerializer
 
 
 class GoogleLogin(SocialLoginView):
@@ -150,7 +147,7 @@ class UserStreamingServicesView(UpdateAPIView):
 
 class QuizAnswersView(APIView):
     """
-    POST quiz answers and return recommended films with details
+    POST quiz answers to save user responses
     """
     permission_classes = [IsAuthenticated]
 
@@ -174,15 +171,8 @@ class QuizAnswersView(APIView):
                     user=user,
                     question_id=question_id,
                     defaults={'answer': answer_text}
-                )        # Get recommended films based on quiz answers
-
-        os.sleep(10)  # SIMULATE PROCESSING TIME
-
-        # LOGIC GOES HERE LATER
-
-        recommended_films = Film.objects.all()[:10]
+                )
 
         return Response({
-            'message': 'Quiz answers saved successfully',
-            'recommended_films': FilmSerializer(recommended_films, many=True).data
+            'message': 'Quiz answers saved successfully'
         }, status=status.HTTP_201_CREATED)
