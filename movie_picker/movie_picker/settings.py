@@ -264,6 +264,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3001",
     'http://movie-picker.s.solvro.pl',
     'https://movie-picker.s.solvro.pl',
+    'https://movie-pick.s.solvro.pl',
+    'http://movie-pick.s.solvro.pl',
 ]
 
 # Allow credentials in CORS requests (needed for JWT cookies)
